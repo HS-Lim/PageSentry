@@ -433,11 +433,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         elif currContent != webpageItem.data(Qt.UserRole):
             webpageItem.setData(Qt.UserRole, currContent)
 
+            #TODO: Show notification here -  "Your alert "Alert 1" has detected
+            #a change."
+
             if self.optionsWindow.soundBox.isChecked():
                 if self.optionsWindow.customBox.isChecked():
                     QSound.play(self.optionsWindow.soundLineEdit.text())
                 else:
                     QSound.play("bell.wav")
+
+    def startTrayIcon(self):
+        #TODO: Create system tray icon
+        pass
 
     def showLog(self):
         #TODO: Open a text file with logged info
