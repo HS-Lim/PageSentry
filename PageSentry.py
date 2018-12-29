@@ -160,7 +160,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         settings.beginGroup("OptionsWindow")
 
         settings.setValue("startup", self.optionsWindow.startupBox.isChecked())
-        settings.setValue("minimize", self.optionsWindow.minimizeBox.isChecked())
+        settings.setValue("notification", self.optionsWindow.notificationBox.isChecked())
         settings.setValue("log", self.optionsWindow.logBox.isChecked())
         settings.setValue("sound", self.optionsWindow.soundBox.isChecked())
         settings.setValue("custom", self.optionsWindow.customBox.isChecked())
@@ -180,8 +180,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #bool values, but turning them into strings "false", "true"
         self.optionsWindow.startupBox.setChecked(
                 self.parseBoolString(settings.value("startup", False)))
-        self.optionsWindow.minimizeBox.setChecked(
-                self.parseBoolString(settings.value("minimize", False)))
+        self.optionsWindow.notificationBox.setChecked(
+                self.parseBoolString(settings.value("notification", False)))
         self.optionsWindow.logBox.setChecked(
                 self.parseBoolString(settings.value("log", False)))
         self.optionsWindow.soundBox.setChecked(
@@ -432,8 +432,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             webpageItem.setData(Qt.UserRole, currContent)
         elif currContent != webpageItem.data(Qt.UserRole):
             webpageItem.setData(Qt.UserRole, currContent)
-            #TODO: Bring out the alarms, log, etc.
-            print("ALEEEEEEEEEEERT")
 
             if self.optionsWindow.soundBox.isChecked():
                 if self.optionsWindow.customBox.isChecked():

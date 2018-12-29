@@ -118,7 +118,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QCheckBox" name="minimizeBox">
+      <widget class="QCheckBox" name="notificationBox">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -126,7 +126,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>Minimize to tray</string>
+        <string>Enable notifications</string>
        </property>
       </widget>
      </item>
