@@ -1,9 +1,11 @@
 from PyQt5.QtWidgets import (
         QApplication, QDialog, QMainWindow, QTableWidget, QTableWidgetItem,
-        QDialogButtonBox, QFileDialog, QDesktopWidget, QMessageBox
+        QDialogButtonBox, QFileDialog, QDesktopWidget, QMessageBox,
+        QSystemTrayIcon, QMenu, QLabel
 )
-from PyQt5.QtCore import QObject, QSettings, QSize, QPoint, QTimer, Qt
+from PyQt5.QtCore import QObject, QSettings, QSize, QPoint, QTimer, Qt, QFile
 from PyQt5.QtMultimedia import QSound
+from PyQt5.QtGui import QIcon, QPixmap
 from ui_edit_window import Ui_EditWindow
 from ui_about_window import Ui_AboutWindow
 from ui_main_window import Ui_MainWindow
@@ -69,6 +71,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #Some UI elements not implemented in Qt Designer:
         self.editWindow.intervalErrLabel.setHidden(True)
         self.editWindow.intervalErrLabel.setStyleSheet("QLabel { color : red; }")
+
+        #Test:
+        self.aboutWindow.authorLabel.setPixmap(QPixmap("binoculars.png"))
+        self.aboutWindow.authorLabel.show()
+
+        #Set up SystemTrayIcon:
+        trayIcon = QSystemTrayIcon(self)
+        trayIcon.setContextMenu(QMenu())
+        trayIcon.setIcon(QIcon(QPixmap("binoculars.png")))
+        trayIcon.show()
 
         #Signals, slots, connections:
         self.newButton.clicked.connect(lambda: self.addNewAlert())
