@@ -73,12 +73,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.editWindow.intervalErrLabel.setStyleSheet("QLabel { color : red; }")
 
         #Test:
-        self.aboutWindow.authorLabel.setPixmap(QPixmap("binoculars.png"))
-        self.aboutWindow.authorLabel.show()
+        #self.aboutWindow.authorLabel.setPixmap(QPixmap("binoculars.png"))
+        #self.aboutWindow.authorLabel.show()
 
         #Set up SystemTrayIcon:
         trayIcon = QSystemTrayIcon(self)
-        trayIcon.setContextMenu(QMenu())
+        trayMenu = QMenu(self)
+        showAction = trayMenu.addAction("Show Window")
+        exitAction = trayMenu.addAction("Exit")
+        
+        exitAction.triggered.connect(lambda: QApplication.quit())
+
+        trayIcon.setContextMenu(trayMenu)
         trayIcon.setIcon(QIcon(QPixmap("binoculars.png")))
         trayIcon.show()
 
