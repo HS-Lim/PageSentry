@@ -83,6 +83,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         exitAction = trayMenu.addAction("Exit")
         
         exitAction.triggered.connect(lambda: QApplication.quit())
+        showAction.triggered.connect(lambda: self.showNormal())
+        trayIcon.activated.connect(lambda: self.showNormal())
 
         trayIcon.setContextMenu(trayMenu)
         trayIcon.setIcon(QIcon(QPixmap("binoculars.png")))
