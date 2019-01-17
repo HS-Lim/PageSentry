@@ -3,9 +3,11 @@ from PyQt5.QtWidgets import (
         QDialogButtonBox, QFileDialog, QDesktopWidget, QMessageBox,
         QSystemTrayIcon, QMenu, QLabel
 )
-from PyQt5.QtCore import QObject, QSettings, QSize, QPoint, QTimer, Qt, QFile
+from PyQt5.QtCore import (
+        QObject, QSettings, QSize, QPoint, QTimer, Qt, QFile, QUrl
+)
 from PyQt5.QtMultimedia import QSound
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtGui import QIcon, QPixmap, QDesktopServices
 from ui_edit_window import Ui_EditWindow
 from ui_about_window import Ui_AboutWindow
 from ui_main_window import Ui_MainWindow
@@ -77,20 +79,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #self.aboutWindow.authorLabel.show()
 
         #Set up SystemTrayIcon:
-        trayIcon = QSystemTrayIcon(self)
+        self.trayIcon = QSystemTrayIcon(self)
         trayMenu = QMenu(self)
         showAction = trayMenu.addAction("Show Window")
         exitAction = trayMenu.addAction("Exit")
+        self.trayAlertPage = ""
         
         exitAction.triggered.connect(lambda: QApplication.quit())
-        showAction.triggered.connect(lambda: self.showNormal())
-        trayIcon.activated.connect(lambda: self.showNormal())
+        showAction.triggered.connect(lambda: self.activateWindow())
+        showAction.triggered.connect(lambda: self.raise_())
+        self.trayIcon.activated.connect(lambda: self.activateWindow())
+        self.trayIcon.activated.connect(lambda: self.raise_())
 
-        trayIcon.setContextMenu(trayMenu)
-        trayIcon.setIcon(QIcon(QPixmap("binoculars.png")))
-        trayIcon.show()
+        self.trayIcon.setContextMenu(trayMenu)
+        self.trayIcon.setIcon(QIcon(QPixmap("binoculars.png")))
+        self.trayIcon.show()
+
+        #TODO: Work out enable notifications option
 
         #Signals, slots, connections:
+        #TODO: Add signal/slot for notification click -> webpage open
+        self.trayIcon.messageClicked.connect(lambda: self.openPage())
+
         self.newButton.clicked.connect(lambda: self.addNewAlert())
         self.editButton.clicked.connect(lambda: self.showEdit())
         self.deleteButton.clicked.connect(lambda: self.deleteAlert())
@@ -117,6 +127,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 lambda: self.chooseLogDir())
         self.optionsWindow.optionsDialog.accepted.connect(
                 lambda: self.writeOptionsSettings())
+        
+        #Test Button Signal/Slot:
+        self.actionTest.triggered.connect(lambda: self.runTest())
+
+    def runTest(self):
+        self.trayIcon.showMessage("Test", "Test")
+
+    def openPage(self):
+        QDesktopServices.openUrl(QUrl(self.trayAlertPage))
 
     def saveTable(self):
         settings = QSettings(MY_ORG, MY_NAME)
@@ -383,7 +402,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def toggleAlert(self):
         print(self.optionsWindow.soundLineEdit.text())
-        QSound.play(self.optionsWindow.soundLineEdit.text())
         currRow = self.alertTableWidget.currentRow()
 
         currItem = self.alertTableWidget.item(currRow, STATUS_COL)
@@ -442,7 +460,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             return float(timeValue) * 1000 * 60 * 60
         
     def runAlert(self, rowIndex):
-        print("Scanning")
+        print("Scanning...")
         webpageItem = self.alertTableWidget.item(rowIndex, WEBPAGE_COL)
 
         #Get the current copy of the website we're checking:
@@ -455,6 +473,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             #TODO: Show notification here -  "Your alert "Alert 1" has detected
             #a change."
+            alertTitle = self.alertTableWidget.item(rowIndex, TITLE_COL).text()
+            alertWebpage = self.alertTableWidget.item(rowIndex, WEBPAGE_COL).text()
+            print(alertTitle, alertWebpage)
+            
+            notificationText = ( 
+                "PageSentry has detected a change in {}.".format(alertWebpage))
+            print(notificationText)
+            self.trayIcon.showMessage(alertTitle, notificationText) 
 
             if self.optionsWindow.soundBox.isChecked():
                 if self.optionsWindow.customBox.isChecked():
