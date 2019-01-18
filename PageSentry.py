@@ -90,17 +90,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         showAction.triggered.connect(lambda: self.raise_())
         self.trayIcon.activated.connect(lambda: self.activateWindow())
         self.trayIcon.activated.connect(lambda: self.raise_())
+        self.trayIcon.messageClicked.connect(lambda: self.openPage())
+        #TODO: Add context menu option to open last "alerted" webpage.
 
         self.trayIcon.setContextMenu(trayMenu)
         self.trayIcon.setIcon(QIcon(QPixmap("binoculars.png")))
         self.trayIcon.show()
 
-        #TODO: Work out enable notifications option
-
         #Signals, slots, connections:
-        #TODO: Add signal/slot for notification click -> webpage open
-        self.trayIcon.messageClicked.connect(lambda: self.openPage())
-
         self.newButton.clicked.connect(lambda: self.addNewAlert())
         self.editButton.clicked.connect(lambda: self.showEdit())
         self.deleteButton.clicked.connect(lambda: self.deleteAlert())
