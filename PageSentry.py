@@ -83,17 +83,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         trayMenu = QMenu(self)
         showAction = trayMenu.addAction("Show Window")
         pageAction = trayMenu.addAction("Open Last Alerted Page")
+        trayMenu.addSeparator()
         exitAction = trayMenu.addAction("Exit")
         self.trayAlertPage = ""
         
         exitAction.triggered.connect(lambda: QApplication.quit())
         showAction.triggered.connect(lambda: self.activateWindow())
         showAction.triggered.connect(lambda: self.raise_())
-        pageAction.triggered.connect(lambda: openPage())
+        pageAction.triggered.connect(lambda: self.openPage())
         self.trayIcon.activated.connect(lambda: self.activateWindow())
         self.trayIcon.activated.connect(lambda: self.raise_())
         self.trayIcon.messageClicked.connect(lambda: self.openPage())
-        #TODO: Add context menu option to open last "alerted" webpage.
 
         self.trayIcon.setContextMenu(trayMenu)
         self.trayIcon.setIcon(QIcon(QPixmap("binoculars.png")))
@@ -470,8 +470,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         elif currContent != webpageItem.data(Qt.UserRole):
             webpageItem.setData(Qt.UserRole, currContent)
 
-            #TODO: Show notification here -  "Your alert "Alert 1" has detected
-            #a change."
             alertTitle = self.alertTableWidget.item(rowIndex, TITLE_COL).text()
             alertWebpage = self.alertTableWidget.item(rowIndex, WEBPAGE_COL).text()
             self.trayAlertPage = alertWebpage
@@ -491,6 +489,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def showLog(self):
         #TODO: Open a text file with logged info
         pass
+
+#TODO: Add ways to check webpage entered by user.
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
