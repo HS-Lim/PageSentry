@@ -13,7 +13,7 @@ from ui_about_window import Ui_AboutWindow
 from ui_main_window import Ui_MainWindow
 from ui_options_window import Ui_OptionsWindow
 
-from htmldiffer import diff
+#from htmldiffer import diff
 from bs4 import BeautifulSoup
 
 import sys, re, requests, time
@@ -333,6 +333,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.alertTableWidget.item(currRow, INTERVAL_COL).setText(comboTime)
         self.alertTableWidget.item(currRow, WEBPAGE_COL).setText(webpage)
 
+        currItem = self.alertTableWidget.item(currRow, STATUS_COL)
+        if currItem.text() == "Active":
+            #TODO Write to log about edit - Alert 'my alert' was edited.
+            #Deactivating and reactivating alert...
+            self.toggleAlert()
+            self.toggleAlert()
+
         MainWindow.setSavedFalse()
 
     def enableTableActions(self):
@@ -367,7 +374,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         return toReturn
 
     def deleteAlert(self):
+        currRow = self.alertTableWidget.currentRow()
+        currItem = self.alertTableWidget.item(currRow, STATUS_COL)
+
+        if currItem.text() == "Active":
+            #TODO: Deactivating alert 'my alert' before deletion...
+            self.toggleAlert()
+
         self.alertTableWidget.removeRow(self.alertTableWidget.currentRow())
+        #TODO: Write to log: Alert 'my alert' deleted.
 
         MainWindow.setSavedFalse()
 
@@ -400,16 +415,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.editWindow.exec()
 
     def toggleAlert(self):
-        print(self.optionsWindow.soundLineEdit.text())
         currRow = self.alertTableWidget.currentRow()
 
         currItem = self.alertTableWidget.item(currRow, STATUS_COL)
         if currItem.text() == "Inactive":
             currItem.setText("Active")
             self.startTimer(currRow)
+            #TODO: Alert 'myalert' was activated. - write to log
         elif currItem.text() == "Active":
             currItem.setText("Inactive")
             self.endTimer(currRow)
+            #TODO: Alert 'myalet was deactivated. - write to log
 
     def startTimer(self, rowIndex):
         #Create a Qtimer that will signal to our scan/alert function
@@ -479,6 +495,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 "PageSentry has detected a change in {}.".format(alertWebpage))
             print(notificationText)
             self.trayIcon.showMessage(alertTitle, notificationText) 
+
+            #TODO: Write to log: Alert 'myalert' has detected a change...
 
             if self.optionsWindow.soundBox.isChecked():
                 if self.optionsWindow.customBox.isChecked():
