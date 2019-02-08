@@ -14,9 +14,9 @@ from ui_main_window import Ui_MainWindow
 from ui_options_window import Ui_OptionsWindow
 
 #from htmldiffer import diff
-from bs4 import BeautifulSoup
+#from bs4 import BeautifulSoup
 
-import sys, re, requests, time
+import sys, re, requests, time, validators
 
 #Vars for alertTableWidget column indices
 TITLE_COL = 0
@@ -74,23 +74,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.editWindow.intervalErrLabel.setHidden(True)
         self.editWindow.intervalErrLabel.setStyleSheet("QLabel { color : red; }")
 
-        #Test:
-        #self.aboutWindow.authorLabel.setPixmap(QPixmap("binoculars.png"))
-        #self.aboutWindow.authorLabel.show()
-
         #Set up SystemTrayIcon:
         self.trayIcon = QSystemTrayIcon(self)
         trayMenu = QMenu(self)
-        showAction = trayMenu.addAction("Show Window")
-        pageAction = trayMenu.addAction("Open Last Alerted Page")
+        trayShowAction = trayMenu.addAction("Show Window")
+        trayPageAction = trayMenu.addAction("Open Last Alerted Page")
         trayMenu.addSeparator()
-        exitAction = trayMenu.addAction("Exit")
+        trayExitAction = trayMenu.addAction("Exit")
         self.trayAlertPage = ""
         
-        exitAction.triggered.connect(lambda: QApplication.quit())
-        showAction.triggered.connect(lambda: self.activateWindow())
-        showAction.triggered.connect(lambda: self.raise_())
-        pageAction.triggered.connect(lambda: self.openPage())
+        trayExitAction.triggered.connect(lambda: self.close())
+        trayShowAction.triggered.connect(lambda: self.activateWindow())
+        trayShowAction.triggered.connect(lambda: self.raise_())
+        trayPageAction.triggered.connect(lambda: self.openPage())
         self.trayIcon.activated.connect(lambda: self.activateWindow())
         self.trayIcon.activated.connect(lambda: self.raise_())
         self.trayIcon.messageClicked.connect(lambda: self.openPage())
@@ -110,15 +106,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionOptions.triggered.connect(lambda: self.showOptions())
         self.actionNew.triggered.connect(lambda: self.addNewAlert())
         self.actionSave.triggered.connect(lambda: self.saveTable())
-        self.actionExit.triggered.connect(lambda: QApplication.quit())
+        self.actionExit.triggered.connect(lambda: self.close())
 
-        self.alertTableWidget.itemSelectionChanged.connect(lambda: self.enableTableActions())
+        self.alertTableWidget.itemSelectionChanged.connect(
+                lambda: self.enableTableActions())
         self.alertTableWidget.doubleClicked.connect(lambda: self.showEdit())
 
         self.editWindow.editDialog.accepted.connect(
                 lambda: self.applyEdit())
         self.editWindow.intervalLineEdit.textEdited.connect(
                 lambda: self.checkIntervalInput())
+        self.editWindow.webpageLineEdit.textEdited.connect(
+                lambda: self.checkWebpageInput())
 
         self.optionsWindow.soundDirButton.clicked.connect(
                 lambda: self.chooseSoundDir())
@@ -127,11 +126,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.optionsWindow.optionsDialog.accepted.connect(
                 lambda: self.writeOptionsSettings())
         
+        #Deactivate all alerts as contingency:
+        self.deactivateAlerts()
+
         #Test Button Signal/Slot:
         self.actionTest.triggered.connect(lambda: self.runTest())
 
     def runTest(self):
-        self.trayIcon.showMessage("Test", "Test")
+        print(bool(validators.url("https://google.com")))
 
     def openPage(self):
         QDesktopServices.openUrl(QUrl(self.trayAlertPage))
@@ -186,6 +188,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             if reply == QMessageBox.Yes:
                 self.saveTable()
+
+        self.deactivateAlerts()
+        QApplication.quit()
 
     def setSavedFalse():
         MainWindow.setSavedFalse.hasSaved = False
@@ -320,6 +325,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.editWindow.intervalErrLabel.setHidden(False)
             self.editWindow.editDialog.button(QDialogButtonBox.Ok).setEnabled(False)
 
+    def checkWebpageInput(self):
+        if bool(validators.url(self.editWindow.webpageLineEdit.text())) is False:
+            self.editWindow.webpageErrLabel.setHidden(False)
+            self.editWindow.editDialog.button(QDialogButtonBox.ok).setEnabled(False)
+        else:
+            self.editWindow.webpageErrLabel.setHidden(True)
+            self.editWindow.editDialog.button(QDialogButtonBox.Ok).setEnabled(True)
+
+        #TODO: Create webpageErrLabel in editWindow in Qt Designer
+
     def applyEdit(self): 
         title = self.editWindow.titleLineEdit.text()
         webpage = self.editWindow.webpageLineEdit.text()
@@ -369,7 +384,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         toReturn.append(QTableWidgetItem("New Alert"))
         toReturn.append(QTableWidgetItem("1 Minute(s)"))
         toReturn.append(QTableWidgetItem("Inactive"))
-        toReturn.append(QTableWidgetItem("http://google.com"))
+        toReturn.append(QTableWidgetItem("https://www.google.com/"))
 
         return toReturn
 
@@ -411,6 +426,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.editWindow.webpageLineEdit.setText(webpage)
 
         self.checkIntervalInput()
+        self.checkWebpageInput()
 
         self.editWindow.exec()
 
@@ -426,6 +442,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             currItem.setText("Inactive")
             self.endTimer(currRow)
             #TODO: Alert 'myalet was deactivated. - write to log
+
+    def deactivateAlerts(self):
+        for row in range(0, self.alertTableWidget.rowCount()):
+            currItem = self.alertTableWidget.item(row, STATUS_COL) 
+
+            if currItem.text() == "Active":
+                currItem.setText("Inactive")
+                self.endTimer(row)
 
     def startTimer(self, rowIndex):
         #Create a Qtimer that will signal to our scan/alert function
@@ -452,17 +476,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
         
     def getPageContent(self, address):
-        response = requests.get(address)
-        content = response.content
+        try:
+            response = requests.get(address, timeout=10)
+        except requests.exceptions.Timeout:
+            #TODO:Raise a notificaiton here that we can't reach webpage    
+            pass
+        #content = response.content
 
-        soup = BeautifulSoup(content)
+        #soup = BeautifulSoup(content)
 
-        return soup.prettify()
+        #return soup.prettify()
+        return response.text
 
     def endTimer(self, rowIndex):
         timer = self.alertTableWidget.item(
                 rowIndex, INTERVAL_COL).data(Qt.UserRole)
-        timer.stop()
+        if timer is not None:
+            timer.stop()
 
     def convertToMS(self, time):
         timeValue = time[0]
