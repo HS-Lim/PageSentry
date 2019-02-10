@@ -74,6 +74,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.editWindow.intervalErrLabel.setHidden(True)
         self.editWindow.intervalErrLabel.setStyleSheet("QLabel { color : red; }")
 
+        self.editWindow.webpageErrLabel.setHidden(True)
+        self.editWindow.webpageErrLabel.setStyleSheet("QLabel { color : red; }")
+
         #Set up SystemTrayIcon:
         self.trayIcon = QSystemTrayIcon(self)
         trayMenu = QMenu(self)
@@ -328,12 +331,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def checkWebpageInput(self):
         if bool(validators.url(self.editWindow.webpageLineEdit.text())) is False:
             self.editWindow.webpageErrLabel.setHidden(False)
-            self.editWindow.editDialog.button(QDialogButtonBox.ok).setEnabled(False)
+            self.editWindow.editDialog.button(QDialogButtonBox.Ok).setEnabled(False)
         else:
             self.editWindow.webpageErrLabel.setHidden(True)
             self.editWindow.editDialog.button(QDialogButtonBox.Ok).setEnabled(True)
-
-        #TODO: Create webpageErrLabel in editWindow in Qt Designer
 
     def applyEdit(self): 
         title = self.editWindow.titleLineEdit.text()
@@ -472,15 +473,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 INTERVAL_COL).text().split()
 
         intervalMS = self.convertToMS(tempInterval)
+
+        self.runAlert(rowIndex)
+
         timer.start(intervalMS)
         
-        
-    def getPageContent(self, address):
+    def getPageContent(self, address, row):
         try:
             response = requests.get(address, timeout=10)
-        except requests.exceptions.Timeout:
-            #TODO:Raise a notificaiton here that we can't reach webpage    
-            pass
+            print(response.text)
+        #requests.exceptions.Timeout
+        except:
+            alertTitle = self.alertTableWidget.item(row, TITLE_COL).text()
+            timeoutMsg = "Alert " + alertTitle + " was unable to reach " + address + "."
+            self.trayIcon.showMessage("Unable to reach webpage", timeoutMsg)
+            
+            return None
+            #TODO: Add log msg about timeout
+            
         #content = response.content
 
         #soup = BeautifulSoup(content)
@@ -509,7 +519,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         webpageItem = self.alertTableWidget.item(rowIndex, WEBPAGE_COL)
 
         #Get the current copy of the website we're checking:
-        currContent = self.getPageContent(webpageItem.text())
+        currContent = self.getPageContent(webpageItem.text(), rowIndex)
+
+        #If unable to access webpage:
+        if currContent is None:
+            return
         
         if webpageItem.data(Qt.UserRole) is None:
             webpageItem.setData(Qt.UserRole, currContent)
@@ -537,8 +551,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def showLog(self):
         #TODO: Open a text file with logged info
         pass
-
-#TODO: Add ways to check webpage entered by user.
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
